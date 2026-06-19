@@ -1,0 +1,11 @@
+node_modules/
+.expo/
+.expo-shared/
+build/
+dist/
+.env
+.DS_Store
+.vscode/
+android/
+ios/
+.expo/
