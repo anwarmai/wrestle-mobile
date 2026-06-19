@@ -8,4 +8,6 @@ dist/
 .vscode/
 android/
 ios/
+!assets/ios/
+!assets/ios/*
 .expo/

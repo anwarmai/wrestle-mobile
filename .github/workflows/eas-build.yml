@@ -23,8 +23,41 @@ jobs:
       - name: Install EAS CLI
         run: npm install -g eas-cli
 
-      - name: EAS Build (iOS)
+      - name: Run EAS build and download artifact
         env:
           EAS_BUILD_AUTOCONFIG: 1
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: eas build --platform ios --profile production --non-interactive
+        run: |
+          build_output=$(eas build --platform ios --profile production --non-interactive --json)
+          echo "$build_output" > build.json
+          node -e "const d=require('fs').readFileSync('build.json','utf8'); const o=JSON.parse(d); if (!o.artifacts || !o.artifacts[0] || !o.artifacts[0].url) { throw new Error('artifact URL missing'); } console.log(o.artifacts[0].url);" > artifact-url.txt
+          ARTIFACT_URL=$(cat artifact-url.txt)
+          echo "Downloading artifact from $ARTIFACT_URL"
+          curl -L -o app.ipa "$ARTIFACT_URL"
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: build-${{ github.run_number }}
+          release_name: "Wrestle Mobile iOS Build ${{ github.run_number }}"
+          draft: true
+          prerelease: false
+
+      - name: Upload IPA to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: app.ipa
+          asset_name: Wrestle-Mobile.ipa
+          asset_content_type: application/octet-stream
+
+      - name: Upload build artifact for workflow
+        uses: actions/upload-artifact@v4
+        with:
+          name: Wrestle-Mobile-iOS-IPA
+          path: app.ipa
