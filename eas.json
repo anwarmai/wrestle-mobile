@@ -1,0 +1,10 @@
+{
+  "build": {
+    "production": {
+      "ios": {
+        "workflow": "managed",
+        "buildType": "archive"
+      }
+    }
+  }
+}
